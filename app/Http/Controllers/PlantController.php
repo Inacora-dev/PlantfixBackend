@@ -12,9 +12,30 @@ class PlantController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $plants = Plant::with('plantFamily')->paginate(8);
+        $query = Plant::with('plantFamily');
+
+        if ($request->has('family')) {
+            $query->where('plant_family_id', $request->input('family'));
+        }
+
+        if ($request->has('sortBy')) {
+            switch ($request->input('sortBy')) {
+                case 'priceAsc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'priceDesc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                default:
+                    break; 
+            }
+        }
+
+        $perPage = $request->input('perPage', 8);
+        $plants = $query->paginate($perPage);
+
         return response()->json($plants);
     }
 
@@ -61,15 +82,27 @@ class PlantController extends Controller
         return response()->json(null, 204);
     }
 
-    public function search(Request $request)
+   public function search(Request $request)
 {
-
     $query = $request->input('q');
+    $familyId = $request->input('family');
 
-
-
-    $plants = Plant::where('name', 'like', "%{$query}%")->paginate(8);
+    $plants = Plant::with('plantFamily')
+        ->when($query, function ($q) use ($query) {
+            $q->where(function ($subquery) use ($query) {
+                $subquery->where('name', 'like', "%{$query}%")
+                    ->orWhere('price', $query)
+                    ->orWhereHas('plantFamily', function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%");
+                    });
+            });
+        })
+        ->when($familyId, function ($q) use ($familyId) {
+            $q->where('plant_family_id', $familyId);
+        })
+        ->paginate(8);
 
     return response()->json($plants);
 }
+
 }

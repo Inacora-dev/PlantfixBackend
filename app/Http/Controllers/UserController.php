@@ -74,7 +74,6 @@ public function destroy($id)
 
 public function store(StoreUserRequest $request)
     {
-        // Solo los administradores pueden crear nuevos usuarios
         if (Auth::user()->role !== 'admin') {
             return response()->json(['error' => 'No autorizado.'], 403);
         }
@@ -85,7 +84,7 @@ public function store(StoreUserRequest $request)
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'user', // Por defecto, el rol es 'user'
+            'role' => $validated['role'] ?? 'user', 
         ]);
 
         return response()->json([
@@ -94,15 +93,18 @@ public function store(StoreUserRequest $request)
         ]);
     }   
 
-     public function search(Request $request)
-{
+ public function search(Request $request)
+    {
+        $query = $request->input('q');
 
-    $query = $request->input('q');
+        $users = User::where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+              ->orWhere('email', 'like', "%{$query}%")
+              ->orWhere('id', $query);
+        })->paginate(8);
 
-    $users = User::where('name', 'like', "%{$query}%")->paginate(8);
-
-    return response()->json($users);
-}
+        return response()->json($users);
+    }
 
 public function show($id)
 {

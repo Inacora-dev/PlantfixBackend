@@ -25,6 +25,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('orders', [OrderController::class, 'store']);
 
     Route::middleware('admin')->group(function () {
+        Route::get('users/search', [UserController::class, 'search']);
+
         Route::get('users', [UserController::class, 'index']);
         Route::get('users/{user}', [UserController::class, 'show']);
         Route::post('users', [UserController::class, 'store']);
@@ -48,9 +50,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('plants/{plant}', [PlantController::class, 'update']);
         Route::patch('plants/{plant}', [PlantController::class, 'update']);
         Route::delete('plants/{plant}', [PlantController::class, 'destroy']);
-
-
-        Route::get('users/search', [UserController::class, 'search']);
 
         Route::get('orders/{id}/user', [OrderController::class, 'getUserByOrder']);
     });
